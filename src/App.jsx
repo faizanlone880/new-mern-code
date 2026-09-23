@@ -11,50 +11,81 @@ import EventsPage from "./pages/EventsPage";
 import EventDetailsPage from "./pages/EventDetailsPage";
 import AboutPage from "./pages/AboutPage";
 
-
 function App() {
     const [events, setEvents] = useState([]);
+    const [editingEvent, setEditingEvent] = useState(null);
 
-    useEffect(()=>{
+    useEffect(() => {
         fetch("http://localhost:5000/api/events")
-        .then((response)=>response.json())
-        .then((data)=>{
-            setEvents(data);
-        });
+            .then((response) => response.json())
+            .then((data) => {
+                setEvents(data);
+            });
     }, []);
 
     function handleAddEvent(newEvent) {
-        fetch("http://localhost:5000/api/events",{
+        fetch("http://localhost:5000/api/events", {
             method: "POST",
             headers: {
-                "content-type":"application/json"
+                "content-type": "application/json"
             },
             body: JSON.stringify(newEvent)
-
-        }).then((response)=>response.json())
-        .then((data)=>{
-            console.log(data);
-            fetch("http://localhost:5000/api/events")
-            .then((response)=>response.json())
-            .then((data)=>{
-                setEvents(data);
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data);
+                fetch("http://localhost:5000/api/events")
+                    .then((response) => response.json())
+                    .then((updatedData) => {
+                        setEvents(updatedData);
+                    });
             });
-        });
     }
 
     function handleDeleteEvent(eventId) {
-       fetch(`http://localhost:5000/api/events/${eventId}`,{
-        method:"DELETE"
-       }).then((response)=>response.json())
-       .then((data)=>{
-        console.log(data);
-        fetch("http://localhost:5000/api/events")
-        .then((response)=>response.json())
-        .then((data)=>{
-            setEvents(data);
-        });
-        });
+        fetch(`http://localhost:5000/api/events/${eventId}`, {
+            method: "DELETE"
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data);
+                fetch("http://localhost:5000/api/events")
+                    .then((response) => response.json())
+                    .then((updatedData) => {
+                        setEvents(updatedData);
+                    });
+            });
     }
+
+    function handleEditEvent(eventId) {
+        const selectedEvent = events.find((event) => event.id === eventId);
+        setEditingEvent(selectedEvent ?? null);
+    }
+
+    function handleUpdateEvent(updatedEvent) {
+        fetch(`http://localhost:5000/api/events/${updatedEvent.id}`, {
+            method: "PUT",
+            headers: {
+                "content-type": "application/json"
+            },
+            body: JSON.stringify(updatedEvent)
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data);
+                setEvents((currentEvents) =>
+                    currentEvents.map((event) =>
+                        event.id === updatedEvent.id ? data.event : event
+                    )
+                );
+                setEditingEvent(null);
+            });
+    }
+
+    function handleCancelEdit() {
+        setEditingEvent(null);
+    }
+
     return (
         <div>
             <Navbar />
@@ -67,6 +98,10 @@ function App() {
                             events={events}
                             onAddEvent={handleAddEvent}
                             onDeleteEvent={handleDeleteEvent}
+                            onEditEvent={handleEditEvent}
+                            onUpdateEvent={handleUpdateEvent}
+                            onCancelEdit={handleCancelEdit}
+                            editingEvent={editingEvent}
                         />
                     }
                 />
